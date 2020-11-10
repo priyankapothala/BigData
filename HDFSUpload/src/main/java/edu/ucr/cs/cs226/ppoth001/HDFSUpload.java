@@ -23,7 +23,7 @@ public class HDFSUpload
             destPath = new Path(args[1]);
         } else {
             System.out.println("Source path and Destination path are required");
-            System.exit(0);
+            return;
         }
         Configuration conf = new Configuration();
 
@@ -32,11 +32,14 @@ public class HDFSUpload
 
         if (!srcFS.exists(srcPath)) {
             System.err.println("Source file does not exist");
-            System.exit(0);
+            srcFS.close();
+            return;
         }
         if (destFS.exists(destPath)) {
             System.out.println("Target file already exists");
-            System.exit(0);
+            srcFS.close();
+            destFS.close();
+            return;
         }
 
         FSDataInputStream inputStream = srcFS.open(srcPath);
@@ -44,13 +47,12 @@ public class HDFSUpload
         byte streamBuffer[] = new byte[256];
         try {
             int bytesRead = 0;
-            long startTime = System.nanoTime();
+            long startTime = System.currentTimeMillis();
             while ((bytesRead = inputStream.read(streamBuffer)) > 0) {
                 outputStream.write(streamBuffer, 0, bytesRead);
             }
-            long endTime = System.nanoTime();
-            System.out.println("------------------------------------------------------------");
-            System.out.println("Time taken to copy from source path to destination path in milliseconds: " + ((endTime - startTime)/1000000));
+            long endTime = System.currentTimeMillis();
+            System.out.println("Time taken to copy from source path to destination path in milliseconds: " + (endTime - startTime));
 
         } catch (IOException e) {
             System.out.println("Error while copying file");
@@ -58,8 +60,8 @@ public class HDFSUpload
         } finally {
             inputStream.close();
             outputStream.close();
+            srcFS.close();
+            destFS.close();
         }
     }
 }
-
-
